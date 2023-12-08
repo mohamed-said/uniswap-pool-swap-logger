@@ -1,6 +1,8 @@
+use std::collections::BTreeSet;
+
 use crate::{
 	converters::dai_usdc::DaiUsdc,
-	logger::{AmountError, AmountType},
+	logger::{AmountError, AmountType, LoggerError},
 };
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};
@@ -16,6 +18,8 @@ impl SwapLogger {
 	}
 
 	pub async fn display_logs(&self) -> Result<(), Box<dyn std::error::Error>> {
+		let mut reorg_check: BTreeSet<web3::types::H256> = BTreeSet::new();
+
 		let swap_event = self.contract.abi().events_by_name("Swap")?.first().unwrap();
 		let swap_event_signature = swap_event.signature();
 		let contract_address = self.contract.address();
@@ -50,6 +54,14 @@ impl SwapLogger {
 					Self::print_log_formatted(parsed_log)?;
 				} else {
 					println!("Log error in block: {:?}", &block.hash);
+					if reorg_check.contains(&block.hash.unwrap()) {
+						continue;
+					} else {
+						reorg_check.insert(block.hash.unwrap());
+						if reorg_check.len() >= 5 {
+							return Err(Box::new(LoggerError::ReorgBlocksExceededLimit));
+						}
+					}
 				}
 			}
 		}

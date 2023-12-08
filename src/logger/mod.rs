@@ -1,7 +1,23 @@
 use num_bigint::{BigUint, ToBigUint};
-use std::fmt::Display;
+use std::fmt::{self, Display};
 
 pub mod swap_logger;
+
+#[derive(Debug)]
+pub enum LoggerError {
+	ReorgBlocksExceededLimit,
+}
+
+impl std::error::Error for LoggerError {}
+
+impl std::fmt::Display for LoggerError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match &self {
+			LoggerError::ReorgBlocksExceededLimit =>
+				write!(f, "Reorganized blocks exceeded the given limit of {{5}}"),
+		}
+	}
+}
 
 #[derive(Debug)]
 pub enum AmountError {
