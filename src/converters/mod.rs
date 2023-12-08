@@ -1,5 +1,5 @@
 use crate::logger::AmountType;
-use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
-use num_traits::{FromPrimitive, ToPrimitive, Num};
+use num_bigint::BigUint;
+use num_traits::{FromPrimitive, Num, ToPrimitive};
 
 pub mod dai_usdc;

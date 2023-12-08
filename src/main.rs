@@ -1,5 +1,5 @@
-pub mod logger;
 pub mod converters;
+pub mod logger;
 
 //use futures::StreamExt;
 use logger::swap_logger::SwapLogger;

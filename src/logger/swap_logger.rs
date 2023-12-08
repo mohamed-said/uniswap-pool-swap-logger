@@ -1,9 +1,9 @@
-use crate::converters::dai_usdc::DaiUsdc;
-use crate::logger::{AmountType, AmountError};
-
+use crate::{
+	converters::dai_usdc::DaiUsdc,
+	logger::{AmountError, AmountType},
+};
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};
-
 
 pub struct SwapLogger {
 	web3_instance: Web3<WebSocket>,
@@ -20,13 +20,13 @@ impl SwapLogger {
 		let swap_event_signature = swap_event.signature();
 		let contract_address = self.contract.address();
 		let block_number = self.web3_instance.eth().block_number().await.unwrap();
-        println!("Latest block number: {}", block_number);
+		println!("Latest block number: {}", block_number);
 
 		let mut block_stream =
 			self.web3_instance.clone().eth_subscribe().subscribe_new_heads().await?;
 
-        // 18741851
-        // 18742400
+		// 18741851
+		// 18742400
 		while let Some(Ok(block)) = block_stream.next().await {
 			let swap_logs_in_block: Vec<web3::types::Log> = self
 				.web3_instance
@@ -58,8 +58,8 @@ impl SwapLogger {
 	}
 
 	fn print_log_formatted(log: web3::ethabi::Log) -> Result<(), Box<dyn std::error::Error>> {
-        let mut amount0: String = String::new();
-        let mut amount1: String = String::new();
+		let mut amount0: String = String::new();
+		let mut amount1: String = String::new();
 
 		println!("{{");
 		for param in log
@@ -74,7 +74,7 @@ impl SwapLogger {
 						16,
 						&AmountType::DAI,
 					)?;
-					println!("\t{}: {} -- hex: {}", param.name, amount0, param.value);
+					println!("\t{}: {}", param.name, amount0);
 				},
 				"amount1" => {
 					amount1 = DaiUsdc::amount_to_decimal(
@@ -82,7 +82,7 @@ impl SwapLogger {
 						16,
 						&AmountType::USDC,
 					)?;
-					println!("\t{}: {} -- hex: {}", param.name, amount1, param.value);
+					println!("\t{}: {}", param.name, amount1);
 				},
 				_ => {
 					println!("\t{}: {}", param.name, param.value);
@@ -95,7 +95,10 @@ impl SwapLogger {
 		Ok(())
 	}
 
-	fn swap_direction(amount0: String, amount1: String) -> Result<String, Box<dyn std::error::Error>> {
+	fn swap_direction(
+		amount0: String,
+		amount1: String,
+	) -> Result<String, Box<dyn std::error::Error>> {
 		if amount0.starts_with('-') && !amount1.starts_with('-') {
 			return Ok(format!("{} -> {}", AmountType::USDC, AmountType::DAI));
 		} else if amount1.starts_with('-') && !amount0.starts_with('-') {
