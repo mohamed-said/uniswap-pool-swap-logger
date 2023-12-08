@@ -1,6 +1,7 @@
 use crate::converters::AmountType;
 use crate::converters::{BigUint, ToBigUint};
 use crate::converters::{FromPrimitive,  Num};
+use crate::logger::AmountError;
 
 pub struct DaiUsdc;
 
@@ -22,14 +23,19 @@ impl DaiUsdc {
         let mut negative = false;
         let factor = amount_type.to_biguint_factor();
 
-        let mut number = BigUint::from_str_radix(value, radix)?;
+        let mut number = BigUint::from_str_radix(value, radix)
+            .map_err(|_| Box::new(AmountError::AmountInvalid))?;
 
-        number = if (&number >> 255) & BigUint::from_i8(1).unwrap() == BigUint::from_i8(1).unwrap() {
-            negative = true;
-            Self::convert_negative(&number)
+        if let Some(mask) = BigUint::from_i8(1) {
+            number = if (&number >> 255) & &mask == mask {
+                negative = true;
+                Self::convert_negative(&number)
+            } else {
+                number
+            };
         } else {
-            number
-        };
+            return Err(Box::new(AmountError::ParsingFailed));
+        }
 
         let factor_applied = &number / &factor;
         number = match factor_applied < 0.to_biguint().unwrap() {
@@ -46,3 +52,67 @@ impl DaiUsdc {
         Ok(res)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const RADIX: u32 = 16;
+
+    mod dai {
+        use super::*;
+        const AMOUNT_TYPE: AmountType = AmountType::DAI;
+
+        #[test]
+        fn valid_negative_number_is_parsed_successfully() {
+            let amount_hex = "ffffffffffffffffffffffffffffffffffffffffffffffe22f377a065f280000";
+            let res = DaiUsdc::amount_to_decimal(amount_hex, RADIX, &AMOUNT_TYPE);
+            assert!(res.is_ok());
+            assert_eq!(res.unwrap(), String::from("-550"));
+        }
+
+        #[test]
+        fn valid_positive_number_is_parsed_successfully() {
+            let amount_hex = "12e7c5758742fa0d8000";
+            let res = DaiUsdc::amount_to_decimal(amount_hex, RADIX, &AMOUNT_TYPE);
+            assert!(res.is_ok());
+            assert_eq!(res.unwrap(), String::from("89278"));
+        }
+
+        #[test]
+        fn invalid_number_returns_err() {
+            let amount_hex = "12g7c5758742fa0d8000";
+            let res = DaiUsdc::amount_to_decimal(amount_hex, RADIX, &AMOUNT_TYPE);
+            assert!(res.is_err());
+        }
+    }
+
+    mod usdc {
+        use super::*;
+        const AMOUNT_TYPE: AmountType = AmountType::USDC;
+
+        #[test]
+        fn valid_negative_number_is_parsed_successfully() {
+            let amount_hex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffeb372399e8";
+            let res = DaiUsdc::amount_to_decimal(amount_hex, RADIX, &AMOUNT_TYPE);
+            assert!(res.is_ok());
+            assert_eq!(res.unwrap(), String::from("-89269"));
+        }
+
+        #[test]
+        fn valid_positive_number_is_parsed_successfully() {
+            let amount_hex = "34d38ca30";
+            let res = DaiUsdc::amount_to_decimal(amount_hex, RADIX, &AMOUNT_TYPE);
+            assert!(res.is_ok());
+            assert_eq!(res.unwrap(), "14180");
+        }
+
+        #[test]
+        fn invalid_number_returns_err() {
+            let amount_hex = "34h38ca30";
+            let res = DaiUsdc::amount_to_decimal(amount_hex, RADIX, &AMOUNT_TYPE);
+            assert!(res.is_err());
+        }
+    }
+}
+
