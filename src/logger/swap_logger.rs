@@ -1,6 +1,6 @@
 use crate::{
-	converters::dai_usdc::DaiUsdc,
-	logger::{AmountError, AmountType, LoggerError, Radix},
+	converters::{dai_usdc::DaiUsdc, Radix},
+	logger::{AmountError, AmountType, LoggerError},
 };
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};

@@ -3,19 +3,6 @@ use std::fmt::{self, Display};
 
 pub mod swap_logger;
 
-
-pub enum Radix {
-    Base16,
-}
-
-impl Radix {
-    pub fn to_uint(&self) -> u32 {
-        match self {
-            Self::Base16 => 16_u32,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub enum LoggerError {
 	ReorgBlocksExceededLimit,
