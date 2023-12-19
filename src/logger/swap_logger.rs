@@ -1,6 +1,6 @@
 use crate::{
 	converters::dai_usdc::DaiUsdc,
-	logger::{AmountError, AmountType, LoggerError},
+	logger::{AmountError, AmountType, LoggerError, Radix},
 };
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};
@@ -67,18 +67,21 @@ impl SwapLogger {
 
 			let mut block_error = false;
 			for log in swap_logs_in_block {
-				if let Ok(parsed_log) = swap_event.parse_log(web3::ethabi::RawLog {
+				match swap_event.parse_log(web3::ethabi::RawLog {
 					topics: log.clone().topics,
 					data: log.clone().data.0,
 				}) {
-					Self::print_log_formatted(parsed_log)?;
-				} else {
-					println!("Log error in block: {:?}", &block.hash);
-					if !block_error {
-						block_error = true;
-					}
-				}
+					Ok(parsed_log) => Self::print_log_formatted(parsed_log)?,
+					Err(err) => {
+						println!("In block: {:?}", &block.hash);
+						println!("Error: {:?}", err);
+						if !block_error {
+							block_error = true;
+						}
+					},
+				};
 			}
+
 			if block_error {
 				reorg_count += 1;
 				if reorg_count >= self.max_reorg {
@@ -104,7 +107,7 @@ impl SwapLogger {
 				"amount0" => {
 					amount0 = DaiUsdc::amount_to_decimal(
 						param.value.to_string().as_str(),
-						16,
+						Radix::Base16.to_uint(),
 						&AmountType::DAI,
 					)?;
 					println!("\t{}: {}", param.name, amount0);
@@ -112,7 +115,7 @@ impl SwapLogger {
 				"amount1" => {
 					amount1 = DaiUsdc::amount_to_decimal(
 						param.value.to_string().as_str(),
-						16,
+						Radix::Base16.to_uint(),
 						&AmountType::USDC,
 					)?;
 					println!("\t{}: {}", param.name, amount1);
