@@ -17,34 +17,49 @@ impl SwapLogger {
 		Self { web3_instance, contract }
 	}
 
+    async fn filter_swap_events(&self, block_hash: web3::types::H256, swap_event_signature: web3::types::H256) -> Result<Vec<web3::types::Log>, Box<dyn std::error::Error>> {
+        let contract_address = self.contract.address();
+
+        let res: Vec<web3::types::Log> = self.web3_instance
+            .eth()
+            .logs(
+                web3::types::FilterBuilder::default()
+                .block_hash(block_hash)
+                .address(vec![contract_address])
+                .from_block(web3::types::BlockNumber::Number(18741851.into()))
+                .to_block(web3::types::BlockNumber::Number(18742400.into()))
+                .topics(Some(vec![swap_event_signature]), None, None, None)
+                .build(),
+            ).await?;
+
+        Ok(res)
+    }
+
 	pub async fn display_logs(&self) -> Result<(), Box<dyn std::error::Error>> {
 		let mut reorg_check: BTreeSet<web3::types::H256> = BTreeSet::new();
+        let mut check_max_reorg = |block_hash: web3::types::H256| -> Result<(), Box<dyn std::error::Error>> {
+            if reorg_check.contains(&block_hash) {
+                return Ok(());
+            } else {
+                reorg_check.insert(block_hash);
+                if reorg_check.len() >= 5 {
+                    return Err(Box::new(LoggerError::ReorgBlocksExceededLimit));
+                }
+            }
+            Ok(())
+        };
 
 		let swap_event = self.contract.abi().events_by_name("Swap")?.first().unwrap();
-		let swap_event_signature = swap_event.signature();
-		let contract_address = self.contract.address();
-		let block_number = self.web3_instance.eth().block_number().await.unwrap();
-		println!("Latest block number: {}", block_number);
+        let swap_event_signature = swap_event.signature();
 
-		let mut block_stream =
-			self.web3_instance.clone().eth_subscribe().subscribe_new_heads().await?;
+		let latest_block_number = self.web3_instance.eth().block_number().await.unwrap();
+		println!("Latest block number: {}", latest_block_number);
 
-		// 18741851
-		// 18742400
+        let mut block_stream =
+            self.web3_instance.clone().eth_subscribe().subscribe_new_heads().await?;
+
 		while let Some(Ok(block)) = block_stream.next().await {
-			let swap_logs_in_block: Vec<web3::types::Log> = self
-				.web3_instance
-				.eth()
-				.logs(
-					web3::types::FilterBuilder::default()
-						.block_hash(block.hash.unwrap())
-						.address(vec![contract_address])
-						.from_block(web3::types::BlockNumber::Number(18741851.into()))
-						.to_block(web3::types::BlockNumber::Number(18742400.into()))
-						.topics(Some(vec![swap_event_signature]), None, None, None)
-						.build(),
-				)
-				.await?;
+            let swap_logs_in_block = self.filter_swap_events(block.hash.unwrap(), swap_event_signature).await?;
 
 			for log in swap_logs_in_block {
 				if let Ok(parsed_log) = swap_event.parse_log(web3::ethabi::RawLog {
@@ -54,14 +69,7 @@ impl SwapLogger {
 					Self::print_log_formatted(parsed_log)?;
 				} else {
 					println!("Log error in block: {:?}", &block.hash);
-					if reorg_check.contains(&block.hash.unwrap()) {
-						continue;
-					} else {
-						reorg_check.insert(block.hash.unwrap());
-						if reorg_check.len() >= 5 {
-							return Err(Box::new(LoggerError::ReorgBlocksExceededLimit));
-						}
-					}
+                    check_max_reorg(block.hash.unwrap())?;
 				}
 			}
 		}
