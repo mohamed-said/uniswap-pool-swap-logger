@@ -34,8 +34,6 @@ impl SwapLogger {
 				web3::types::FilterBuilder::default()
 					.block_hash(block_hash)
 					.address(vec![contract_address])
-					.from_block(web3::types::BlockNumber::Number(18741851.into()))
-					.to_block(web3::types::BlockNumber::Number(18742400.into()))
 					.topics(Some(vec![swap_event_signature]), None, None, None)
 					.build(),
 			)
@@ -54,11 +52,8 @@ impl SwapLogger {
 
 		let swap_event_signature = swap_event.signature();
 
-		let latest_block_number = self.web3_instance.eth().block_number().await.unwrap();
-		println!("Latest block number: {}", latest_block_number);
-
 		let mut block_stream =
-			self.web3_instance.clone().eth_subscribe().subscribe_new_heads().await?;
+			self.web3_instance.eth_subscribe().subscribe_new_heads().await?;
 
 		let mut reorg_count = 0;
 		while let Some(Ok(block)) = block_stream.next().await {
