@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use crate::{
 	converters::dai_usdc::DaiUsdc,
 	logger::{AmountError, AmountType, LoggerError},
@@ -10,11 +8,16 @@ use web3::{contract::Contract, transports::WebSocket, Web3};
 pub struct SwapLogger {
 	web3_instance: Web3<WebSocket>,
 	contract: Contract<WebSocket>,
+	max_reorg: usize,
 }
 
 impl SwapLogger {
-	pub fn new(contract: Contract<WebSocket>, web3_instance: Web3<WebSocket>) -> Self {
-		Self { web3_instance, contract }
+	pub fn new(
+		contract: Contract<WebSocket>,
+		web3_instance: Web3<WebSocket>,
+		max_reorg: usize,
+	) -> Self {
+		Self { web3_instance, contract, max_reorg }
 	}
 
 	async fn filter_swap_events(
@@ -42,21 +45,13 @@ impl SwapLogger {
 	}
 
 	pub async fn display_logs(&self) -> Result<(), Box<dyn std::error::Error>> {
-		let mut reorg_check: BTreeSet<web3::types::H256> = BTreeSet::new();
-		let mut check_max_reorg =
-			|block_hash: web3::types::H256| -> Result<(), Box<dyn std::error::Error>> {
-				if reorg_check.contains(&block_hash) {
-					return Ok(());
-				} else {
-					reorg_check.insert(block_hash);
-					if reorg_check.len() >= 5 {
-						return Err(Box::new(LoggerError::ReorgBlocksExceededLimit));
-					}
-				}
-				Ok(())
-			};
+		let swap_event = self
+			.contract
+			.abi()
+			.events_by_name("Swap")?
+			.first()
+			.ok_or_else(|| return Box::new(LoggerError::ReorgBlocksExceededLimit))?;
 
-		let swap_event = self.contract.abi().events_by_name("Swap")?.first().unwrap();
 		let swap_event_signature = swap_event.signature();
 
 		let latest_block_number = self.web3_instance.eth().block_number().await.unwrap();
@@ -65,10 +60,12 @@ impl SwapLogger {
 		let mut block_stream =
 			self.web3_instance.clone().eth_subscribe().subscribe_new_heads().await?;
 
+		let mut reorg_count = 0;
 		while let Some(Ok(block)) = block_stream.next().await {
 			let swap_logs_in_block =
 				self.filter_swap_events(block.hash.unwrap(), swap_event_signature).await?;
 
+			let mut block_error = false;
 			for log in swap_logs_in_block {
 				if let Ok(parsed_log) = swap_event.parse_log(web3::ethabi::RawLog {
 					topics: log.clone().topics,
@@ -77,7 +74,15 @@ impl SwapLogger {
 					Self::print_log_formatted(parsed_log)?;
 				} else {
 					println!("Log error in block: {:?}", &block.hash);
-					check_max_reorg(block.hash.unwrap())?;
+					if !block_error {
+						block_error = true;
+					}
+				}
+			}
+			if block_error {
+				reorg_count += 1;
+				if reorg_count >= self.max_reorg {
+					return Err(Box::new(LoggerError::ReorgBlocksExceededLimit));
 				}
 			}
 		}
