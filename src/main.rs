@@ -5,7 +5,7 @@ use logger::swap_logger::SwapLogger;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // set the environment variable for your Infura endpoint URL
+	// set the environment variable for your Infura endpoint URL
 	if let Ok(websocket_infura_endpoint) = std::env::var("WEBSOCKET_INFURA_ENDPOINT") {
 		let web3 = web3::Web3::new(
 			web3::transports::ws::WebSocket::new(&websocket_infura_endpoint).await?,
@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			include_bytes!("contracts/uniswap_pool_abi.json"),
 		)?;
 
-        // Inject the contract and the web3 object into the logger
+		// Inject the contract and the web3 object into the logger
 		let logger = SwapLogger::new(contract.clone(), web3.clone());
 		let _ = logger.display_logs().await;
 	} else {
