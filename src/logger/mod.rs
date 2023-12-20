@@ -6,6 +6,7 @@ pub mod swap_logger;
 #[derive(Debug)]
 pub enum LoggerError {
 	ReorgBlocksExceededLimit,
+    FailedToRetrieveEvent,
 }
 
 impl std::error::Error for LoggerError {}
@@ -15,6 +16,7 @@ impl std::fmt::Display for LoggerError {
 		match &self {
 			LoggerError::ReorgBlocksExceededLimit =>
 				write!(f, "Reorganized blocks exceeded the given limit of {{5}}"),
+            LoggerError::FailedToRetrieveEvent => write!(f, "Failed to create Event object with specified event name"),
 		}
 	}
 }

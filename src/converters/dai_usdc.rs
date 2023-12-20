@@ -62,6 +62,7 @@ mod tests {
 
 	const RADIX: u32 = 16;
 
+    /// Hex to decimal calculations verified with: https://www.exploringbinary.com/twos-complement-converter/
 	mod dai {
 		use super::*;
 		const AMOUNT_TYPE: AmountType = AmountType::DAI;

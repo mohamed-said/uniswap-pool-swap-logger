@@ -48,7 +48,7 @@ impl SwapLogger {
 			.abi()
 			.events_by_name("Swap")?
 			.first()
-			.ok_or_else(|| return Box::new(LoggerError::ReorgBlocksExceededLimit))?;
+			.ok_or_else(|| return Box::new(LoggerError::FailedToRetrieveEvent))?;
 
 		let swap_event_signature = swap_event.signature();
 
