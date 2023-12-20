@@ -4,9 +4,10 @@ use std::fmt::{self, Display};
 pub mod swap_logger;
 
 #[derive(Debug)]
+/// (Custom) Errors that might happen while the logger is running
 pub enum LoggerError {
 	ReorgBlocksExceededLimit,
-    FailedToRetrieveEvent,
+	FailedToRetrieveEvent,
 }
 
 impl std::error::Error for LoggerError {}
@@ -16,12 +17,14 @@ impl std::fmt::Display for LoggerError {
 		match &self {
 			LoggerError::ReorgBlocksExceededLimit =>
 				write!(f, "Reorganized blocks exceeded the given limit of {{5}}"),
-            LoggerError::FailedToRetrieveEvent => write!(f, "Failed to create Event object with specified event name"),
+			LoggerError::FailedToRetrieveEvent =>
+				write!(f, "Failed to create Event object with specified event name"),
 		}
 	}
 }
 
 #[derive(Debug)]
+/// Errors that might occur with the amounts transferred
 pub enum AmountError {
 	AllAmountsAreNegative,
 	AmountInvalid,

@@ -5,9 +5,16 @@ use crate::{
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};
 
+/// Manages the logging workflow for events of type "Swap"
 pub struct SwapLogger {
+	/// web3 instance holding the user's Infura endpoint.
+	/// Facilitates communication to the block chain.
 	web3_instance: Web3<WebSocket>,
+
+	/// The contract you want to interact with.
 	contract: Contract<WebSocket>,
+
+	/// Maximum number allowed for organization depth, if exceeded the app should stop.
 	max_reorg: usize,
 }
 
@@ -20,6 +27,7 @@ impl SwapLogger {
 		Self { web3_instance, contract, max_reorg }
 	}
 
+	/// filter swap events for a given block
 	async fn filter_swap_events(
 		&self,
 		block_hash: web3::types::H256,
@@ -42,31 +50,36 @@ impl SwapLogger {
 		Ok(res)
 	}
 
+	/// subscribes to the latest updates and handles logs printing whenever a new block is ready
 	pub async fn display_logs(&self) -> Result<(), Box<dyn std::error::Error>> {
 		let swap_event = self
 			.contract
 			.abi()
 			.events_by_name("Swap")?
 			.first()
-			.ok_or_else(|| return Box::new(LoggerError::FailedToRetrieveEvent))?;
+			.ok_or_else(|| Box::new(LoggerError::FailedToRetrieveEvent))?;
 
 		let swap_event_signature = swap_event.signature();
 
-		let mut block_stream =
-			self.web3_instance.eth_subscribe().subscribe_new_heads().await?;
+		// create a heads subscription
+		let mut block_stream = self.web3_instance.eth_subscribe().subscribe_new_heads().await?;
 
 		let mut reorg_count = 0;
 		while let Some(Ok(block)) = block_stream.next().await {
+			// returns a list of all the "Swap" events in the current block
 			let swap_logs_in_block =
 				self.filter_swap_events(block.hash.unwrap(), swap_event_signature).await?;
 
 			let mut block_error = false;
 			for log in swap_logs_in_block {
+				// parse each Log's raw data into a more readable format
 				match swap_event.parse_log(web3::ethabi::RawLog {
 					topics: log.clone().topics,
 					data: log.clone().data.0,
 				}) {
+					// print the requested log fields in the specified format
 					Ok(parsed_log) => Self::print_log_formatted(parsed_log)?,
+					// if data was invalid, keep a record of the incident
 					Err(err) => {
 						println!("In block: {:?}", &block.hash);
 						println!("Error: {:?}", err);
@@ -88,6 +101,13 @@ impl SwapLogger {
 		Ok(())
 	}
 
+	/// Prints the log's data to stdout with the requested format
+	/// {
+	///     The amounts as decimal numbers,
+	///     The "direction" of the swap,
+	///     The sender address,
+	///     The receiver address,
+	/// }
 	fn print_log_formatted(log: web3::ethabi::Log) -> Result<(), Box<dyn std::error::Error>> {
 		let mut amount0: String = String::new();
 		let mut amount1: String = String::new();
@@ -126,6 +146,7 @@ impl SwapLogger {
 		Ok(())
 	}
 
+	/// determine swap direction (DAI -> USDC) or (USDC -> DAI)
 	fn swap_direction(
 		amount0: String,
 		amount1: String,

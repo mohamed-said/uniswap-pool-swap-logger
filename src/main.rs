@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		// Inject the contract and the web3 object into the logger
 		let max_reorg: usize = 5;
 		let logger = SwapLogger::new(contract.clone(), web3.clone(), max_reorg);
-		let _ = logger.display_logs().await;
+		logger.display_logs().await?;
 	} else {
 		panic!("INFURA endpoint env var is not set!");
 	}
