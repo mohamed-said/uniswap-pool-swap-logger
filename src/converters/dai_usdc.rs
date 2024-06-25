@@ -1,6 +1,6 @@
 use crate::{
 	converters::{AmountType, BigUint, FromPrimitive, Num, ToPrimitive},
-	logger::AmountError,
+	loggers::AmountError,
 };
 
 pub struct DaiUsdc;

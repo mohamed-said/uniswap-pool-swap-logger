@@ -1,6 +1,6 @@
 use crate::{
 	converters::{dai_usdc::DaiUsdc, Radix},
-	logger::{AmountError, AmountType, LoggerError},
+	loggers::{AmountError, AmountType, LoggerError},
 };
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};
@@ -14,17 +14,17 @@ pub struct SwapLogger {
 	/// The contract you want to interact with.
 	contract: Contract<WebSocket>,
 
-	/// Maximum number allowed for organization depth, if exceeded the app should stop.
-	max_reorg: usize,
+	// Maximum number allowed for organization depth
+    // TODO
+	//_max_reorg: usize,
 }
 
 impl SwapLogger {
 	pub fn new(
 		contract: Contract<WebSocket>,
 		web3_instance: Web3<WebSocket>,
-		max_reorg: usize,
 	) -> Self {
-		Self { web3_instance, contract, max_reorg }
+		Self { web3_instance, contract }
 	}
 
 	/// filter swap events for a given block
@@ -64,12 +64,10 @@ impl SwapLogger {
 		// create a heads subscription
 		let mut block_stream = self.web3_instance.eth_subscribe().subscribe_new_heads().await?;
 
-		let mut reorg_count = 0;
 		while let Some(Ok(block)) = block_stream.next().await {
 			// returns a list of all the "Swap" events in the current block
 			let swap_logs_in_block =
 				self.filter_swap_events(block.hash.unwrap(), swap_event_signature).await?;
-
 			let mut block_error = false;
 			for log in swap_logs_in_block {
 				// parse each Log's raw data into a more readable format
@@ -88,13 +86,6 @@ impl SwapLogger {
 						}
 					},
 				};
-			}
-
-			if block_error {
-				reorg_count += 1;
-				if reorg_count >= self.max_reorg {
-					return Err(Box::new(LoggerError::ReorgBlocksExceededLimit));
-				}
 			}
 		}
 

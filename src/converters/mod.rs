@@ -1,4 +1,4 @@
-use crate::logger::AmountType;
+use crate::loggers::AmountType;
 use num_bigint::BigUint;
 use num_traits::{FromPrimitive, Num, ToPrimitive};
 
