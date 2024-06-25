@@ -13,7 +13,8 @@ development.
 
 ## Workflow
 - Create a `web3` object using your Infura endpoint
-- Create a contract object using the provided contract address (In this case it's the [DAI/USDC contract](https://etherscan.io/address/0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168)
+- Create a contract object using the provided contract address
+    - In this case it's the [DAI/USDC contract](https://etherscan.io/address/0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168)
 - Create a `SwapLogger` object, and inject the web3 and the contract objects into it.
 - call the async function `display_logs`, which subscribes to the latest updates on the Ethereum block chain.
 
