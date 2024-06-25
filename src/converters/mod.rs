@@ -10,13 +10,13 @@ pub mod dai_usdc;
 //
 // Could be easily extended by adding more radixes if/when needed
 pub enum Radix {
-	Base16,
+    Base16,
 }
 
 impl Radix {
-	pub fn to_uint(&self) -> u32 {
-		match self {
-			Self::Base16 => 16_u32,
-		}
-	}
+    pub fn to_uint(&self) -> u32 {
+        match self {
+            Self::Base16 => 16_u32,
+        }
+    }
 }
