@@ -1,11 +1,13 @@
 # Uniswap Pool Swap Logger
+
+Experimental project 🤓
+
 Simple logger for the swap events between crypto currencies using the open
 source uniswap protocol on the Ethereum Blockchain.
 
 Currently it only supports the [DAI/USDC](https://app.uniswap.org/explore/pools/ethereum/0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168) pool.
 
-I will be experimenting and adding more pool to learn more about Blockchain
-development.
+I will be experimenting and adding more pool to learn more about Blockchain development.
 
 ## Requirements
 - Local Rust setup
