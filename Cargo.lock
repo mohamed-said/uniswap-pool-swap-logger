@@ -1342,6 +1342,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "rust_decimal",
+ "thiserror",
  "tokio",
  "web3",
 ]

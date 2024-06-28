@@ -1,10 +1,12 @@
 pub mod converters;
 pub mod loggers;
 
+use anyhow::Result;
+
 use loggers::swap_logger::SwapLogger;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     // set the environment variable for your Infura endpoint URL
     if let Ok(websocket_infura_endpoint) = std::env::var("WEBSOCKET_INFURA_ENDPOINT") {
         let web3 = web3::Web3::new(

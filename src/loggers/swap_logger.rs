@@ -2,8 +2,11 @@ use crate::{
     converters::{dai_usdc::DaiUsdc, Radix},
     loggers::{AmountError, AmountType, LoggerError},
 };
+
 use futures::StreamExt;
 use web3::{contract::Contract, transports::WebSocket, Web3};
+
+use anyhow::{Context, Result};
 
 /// Manages the logging workflow for events of type "Swap"
 pub struct SwapLogger {
@@ -31,7 +34,7 @@ impl SwapLogger {
         &self,
         block_hash: web3::types::H256,
         swap_event_signature: web3::types::H256,
-    ) -> Result<Vec<web3::types::Log>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<web3::types::Log>> {
         let contract_address = self.contract.address();
 
         let res: Vec<web3::types::Log> = self
@@ -50,7 +53,7 @@ impl SwapLogger {
     }
 
     /// subscribes to the latest updates and handles logs printing whenever a new block is ready
-    pub async fn display_logs(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn display_logs(&self) -> Result<()> {
         let swap_event = self
             .contract
             .abi()
@@ -71,7 +74,7 @@ impl SwapLogger {
             // returns a list of all the "Swap" events in the current block
             let swap_logs_in_block = self
                 .filter_swap_events(block.hash.unwrap(), swap_event_signature)
-                .await?;
+                .await.context("Filter swap events failed")?;
             let mut block_error = false;
             for log in swap_logs_in_block {
                 // parse each Log's raw data into a more readable format
@@ -103,7 +106,7 @@ impl SwapLogger {
     ///     The sender address,
     ///     The receiver address,
     /// }
-    fn print_log_formatted(log: web3::ethabi::Log) -> Result<(), Box<dyn std::error::Error>> {
+    fn print_log_formatted(log: web3::ethabi::Log) -> Result<()> {
         let mut amount0: String = String::new();
         let mut amount1: String = String::new();
 
@@ -135,7 +138,7 @@ impl SwapLogger {
                 }
             }
         }
-        println!("\tdirection: {}", Self::swap_direction(amount0, amount1)?);
+        println!("\tdirection: {}", Self::swap_direction(amount0, amount1).context("Swap direction failed!")?);
         println!("}}");
 
         Ok(())
@@ -145,13 +148,13 @@ impl SwapLogger {
     fn swap_direction(
         amount0: String,
         amount1: String,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String> {
         if amount0.starts_with('-') && !amount1.starts_with('-') {
             return Ok(format!("{} -> {}", AmountType::USDC, AmountType::DAI));
         } else if amount1.starts_with('-') && !amount0.starts_with('-') {
             return Ok(format!("{} -> {}", AmountType::DAI, AmountType::USDC));
         }
 
-        Err(Box::new(AmountError::AllAmountsAreNegative))
+        Err(AmountError::AllAmountsAreNegative.into())
     }
 }

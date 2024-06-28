@@ -1,46 +1,29 @@
 use num_bigint::{BigUint, ToBigUint};
-use std::fmt::{self, Display};
+use std::fmt::Display;
+
+use thiserror::Error;
 
 pub mod swap_logger;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 /// (Custom) Errors that might happen while the logger is running
 pub enum LoggerError {
+    #[error("Failed to create Event object with specified event name")]
     FailedToRetrieveEvent,
 }
 
-impl std::error::Error for LoggerError {}
 
-impl std::fmt::Display for LoggerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            LoggerError::FailedToRetrieveEvent => {
-                write!(f, "Failed to create Event object with specified event name")
-            }
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Error)]
 /// Errors that might occur with the amounts transferred
 pub enum AmountError {
+    #[error("Swap amounts cannot be both negative")]
     AllAmountsAreNegative,
+
+    #[error("Amount data is corrupt or invalid")]
     AmountInvalid,
+
+    #[error("Error while parsing amounts to decimal values")]
     ParsingFailed,
-}
-
-impl std::error::Error for AmountError {}
-
-impl std::fmt::Display for AmountError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            AmountError::AllAmountsAreNegative => write!(f, "Swap amounts cannot be both negative"),
-            AmountError::AmountInvalid => write!(f, "Amount data is corrupt or invalid"),
-            AmountError::ParsingFailed => {
-                write!(f, "Error while parsing amounts to decimal values")
-            }
-        }
-    }
 }
 
 pub enum AmountType {

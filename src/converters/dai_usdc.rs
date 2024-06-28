@@ -2,6 +2,7 @@ use crate::{
     converters::{AmountType, BigUint, FromPrimitive, Num, ToPrimitive},
     loggers::AmountError,
 };
+use anyhow::Result;
 
 pub struct DaiUsdc;
 
@@ -26,14 +27,14 @@ impl DaiUsdc {
         value: &str,
         radix: u32,
         amount_type: &AmountType,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String> {
         let mut negative = false;
 
         // precision factor depending on whether the type is DAI or USDC
         let factor = amount_type.to_biguint_factor();
 
         let mut number = BigUint::from_str_radix(value, radix)
-            .map_err(|_| Box::new(AmountError::AmountInvalid))?;
+            .map_err(|_| AmountError::AmountInvalid)?;
 
         // check if the numver is negative by checking the most significant bit
         if let Some(mask) = BigUint::from_i8(1) {
@@ -44,7 +45,7 @@ impl DaiUsdc {
                 number
             };
         } else {
-            return Err(Box::new(AmountError::ParsingFailed));
+            return Err(AmountError::ParsingFailed.into());
         }
 
         let factor_applied = number.to_f64().unwrap() / factor.to_f64().unwrap();
