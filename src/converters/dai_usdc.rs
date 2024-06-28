@@ -2,7 +2,7 @@ use crate::{
     converters::{AmountType, BigUint, FromPrimitive, Num, ToPrimitive},
     loggers::AmountError,
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 pub struct DaiUsdc;
 
@@ -48,7 +48,18 @@ impl DaiUsdc {
             return Err(AmountError::ParsingFailed.into());
         }
 
-        let factor_applied = number.to_f64().unwrap() / factor.to_f64().unwrap();
+        let number = match number.to_f64() {
+            Some(number) => number,
+            None => return Err(anyhow!("Failed to convert number: {} to f64", number))
+        };
+
+        let factor = match factor.to_f64() {
+            Some(factor) => factor,
+            None => return Err(anyhow!("Failed to convert factor: {} to f64", factor))
+
+        };
+
+        let factor_applied = number / factor;
 
         let mut res = match factor_applied < 0_f64 {
             true => number.to_f64().unwrap(),
