@@ -12,7 +12,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         let contract_address = web3::types::H160::from_slice(
-            &hex::decode("5777d92f208679db4b9778590fa3cab3ac9e2168").unwrap()[..],
+            &hex::decode("5777d92f208679db4b9778590fa3cab3ac9e2168")
+            .unwrap_or_else(|_| panic!("Invalid Contract Address!"))
+            .as_slice()
         );
 
         let contract = web3::contract::Contract::from_json(
