@@ -74,7 +74,8 @@ impl SwapLogger {
             // returns a list of all the "Swap" events in the current block
             let swap_logs_in_block = self
                 .filter_swap_events(block.hash.unwrap(), swap_event_signature)
-                .await.context("Filter swap events failed")?;
+                .await
+                .context("Filter swap events failed")?;
             let mut block_error = false;
             for log in swap_logs_in_block {
                 // parse each Log's raw data into a more readable format
@@ -138,17 +139,17 @@ impl SwapLogger {
                 }
             }
         }
-        println!("\tdirection: {}", Self::swap_direction(amount0, amount1).context("Swap direction failed!")?);
+        println!(
+            "\tdirection: {}",
+            Self::swap_direction(amount0, amount1).context("Swap direction failed!")?
+        );
         println!("}}");
 
         Ok(())
     }
 
     /// determine swap direction (DAI -> USDC) or (USDC -> DAI)
-    fn swap_direction(
-        amount0: String,
-        amount1: String,
-    ) -> Result<String> {
+    fn swap_direction(amount0: String, amount1: String) -> Result<String> {
         if amount0.starts_with('-') && !amount1.starts_with('-') {
             return Ok(format!("{} -> {}", AmountType::USDC, AmountType::DAI));
         } else if amount1.starts_with('-') && !amount0.starts_with('-') {

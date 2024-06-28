@@ -23,18 +23,14 @@ impl DaiUsdc {
     }
 
     /// Converts the transferred (or swapped) amount from hex format to decimal format
-    pub fn amount_to_decimal(
-        value: &str,
-        radix: u32,
-        amount_type: &AmountType,
-    ) -> Result<String> {
+    pub fn amount_to_decimal(value: &str, radix: u32, amount_type: &AmountType) -> Result<String> {
         let mut negative = false;
 
         // precision factor depending on whether the type is DAI or USDC
         let factor = amount_type.to_biguint_factor();
 
-        let mut number = BigUint::from_str_radix(value, radix)
-            .map_err(|_| AmountError::AmountInvalid)?;
+        let mut number =
+            BigUint::from_str_radix(value, radix).map_err(|_| AmountError::AmountInvalid)?;
 
         // check if the numver is negative by checking the most significant bit
         if let Some(mask) = BigUint::from_i8(1) {
@@ -50,13 +46,12 @@ impl DaiUsdc {
 
         let number = match number.to_f64() {
             Some(number) => number,
-            None => return Err(anyhow!("Failed to convert number: {} to f64", number))
+            None => return Err(anyhow!("Failed to convert number: {} to f64", number)),
         };
 
         let factor = match factor.to_f64() {
             Some(factor) => factor,
-            None => return Err(anyhow!("Failed to convert factor: {} to f64", factor))
-
+            None => return Err(anyhow!("Failed to convert factor: {} to f64", factor)),
         };
 
         let factor_applied = number / factor;

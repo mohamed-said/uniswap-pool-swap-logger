@@ -12,7 +12,6 @@ pub enum LoggerError {
     FailedToRetrieveEvent,
 }
 
-
 #[derive(Debug, Error)]
 /// Errors that might occur with the amounts transferred
 pub enum AmountError {
