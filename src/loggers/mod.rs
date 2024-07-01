@@ -4,6 +4,7 @@ use std::fmt::Display;
 use thiserror::Error;
 
 pub mod swap_logger;
+pub mod transaction_log;
 
 #[derive(Debug, Error)]
 /// (Custom) Errors that might happen while the logger is running
