@@ -14,7 +14,7 @@ jobs:
     runs-on:                     ${{matrix.os}}
     strategy:
       matrix:
-        os:                      [ununtu-latest, macOS-latest]
+        os:                      [ubuntu-latest, macOS-latest]
     name:                        Check, test and build
     env:
       RUST_BACKTRACE:            full
