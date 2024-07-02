@@ -17,6 +17,11 @@ jobs:
       RUST_BACKTRACE: full
 
     steps:
+    - name:                      Checkout sources & submodules
+      uses:                      actions/checkout@master
+      with:
+        fetch-depth:             5
+        submodules:              recursive
 # Check Stage
     - name: Checking rust-stable
       uses: actions-rs/cargo@master
