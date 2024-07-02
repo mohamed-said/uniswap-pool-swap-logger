@@ -11,10 +11,13 @@ env:
 
 jobs:
   check-test-build:
-    runs-on: ubuntu-latest
-    name: Check, test and build
+    runs-on:                     ${{matrix.os}}
+    strategy:
+      matrix:
+        os:                      [ununtu-latest, macOS-latest]
+    name:                        Check, test and build
     env:
-      RUST_BACKTRACE: full
+      RUST_BACKTRACE:            full
 
     steps:
     - name:                      Checkout sources & submodules
@@ -45,3 +48,39 @@ jobs:
         command:                 test
         toolchain:               stable
         args:                    --all --verbose
+  fmt:
+    runs-on:                     ubuntu-latest
+    name:                        Check style formatting
+
+    steps:
+    - name:                      Checkout sources & submodules
+      uses:                      actions/checkout@master
+      with:
+        fetch-depth:             5
+        submodules:              recursive
+# fmt stage
+    - name:                      Checking code formatting
+      uses:                      actions-rs/cargo@master
+      with:
+        command:                 fmt
+        toolchain:               stable
+
+  static-analysis:
+    runs-on:                     ubuntu-latest
+    name:                        Run static analysis
+
+    steps:
+    - name:                      Checkout sources & submodules
+      uses:                      actions/checkout@master
+      with:
+        fetch-depth:             5
+        submodules:              recursive
+
+# clippy stage
+    - name:                      Cippy
+      uses:                      actions-rs/cargo@master
+      with:
+        command:                 clippy
+        toolchain:               stable
+        args:                    --no-deps
+
