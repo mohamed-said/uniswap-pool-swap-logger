@@ -2,7 +2,7 @@
 name = "uniswap-pool-swap-logger"
 version = "0.1.0"
 edition = "2021"
-author = "Mohamed Said"
+author = "Mohamed Said mohamed.said.fci@gmail.com"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
